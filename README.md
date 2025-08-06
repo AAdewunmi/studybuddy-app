@@ -1,5 +1,7 @@
 # 👷 UNDER CONSTRUCTION 🚧
 
+📒 Follow the build journal here: [StudyBuddy Application Project Tracking Notes](https://docs.google.com/document/d/1EhhgQm3zqiUPaV7JSrARes0dfj84W4hXUaf68w_S3yo/edit?usp=sharing)
+
 ````markdown
 # 📚 StudyBuddy – Collaborative Study Planner & Habit Tracker
 
@@ -103,8 +105,6 @@ studybuddy/
 * [ ] Week 4 – Shared Calendar
 * [ ] Week 5 – Dashboards & Polish
 * [ ] Week 6 – Testing & Deployment
-
-📒 Follow the build journal here: [StudyBuddy Application Project Tracking Notes](https://docs.google.com/document/d/1EhhgQm3zqiUPaV7JSrARes0dfj84W4hXUaf68w_S3yo/edit?usp=sharing)
 
 ---
 

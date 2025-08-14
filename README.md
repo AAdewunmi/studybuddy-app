@@ -25,15 +25,19 @@ Built using **Spring Boot**, **Thymeleaf**, and **PostgreSQL**, the app demonstr
 
 ## 🔧 Tech Stack
 
-| Layer        | Tech                            |
-|-------------|----------------------------------|
+| Layer        | Tech                                    |
+|--------------|-----------------------------------------|
+| Language     | Java 11                                 |
 | Backend      | Java, Spring Boot, Spring Security, JPA |
-| Frontend     | Thymeleaf, Alpine.js, Bootstrap |
-| Database     | PostgreSQL                      |
-| Deployment   | Render / Railway (planned)      |
-| Testing      | JUnit, Mockito                  |
-
----
+| Frontend     | Thymeleaf, Alpine.js, Bootstrap         |
+| Database     | PostgreSQL                              |
+| Deployment   | Render / Railway (planned)              |
+| Testing      | JUnit, Mockito                          |
+| Tools        | Docker, Docker Compose                  
+| Documentation| Google Docs                             |
+| CI/CD        | GitHub Actions                          |
+| Version Control | GitHub                               |
+|-----------------|--------------------------------------|
 
 ## ✨ Key Features (MVP)
 
@@ -48,7 +52,7 @@ Built using **Spring Boot**, **Thymeleaf**, and **PostgreSQL**, the app demonstr
 
 ## 📁 Project Structure (WIP)
 
-```bash
+```
 studybuddy/
 ├── src/
 │   ├── main/
@@ -63,7 +67,20 @@ studybuddy/
 │   │   │   └── application.properties
 └── README.md
 ````
+```
+studybuddy/
+├── db/
+│   └── init/
+│       ├── studybuddy_postgresql_schema.sql
+│       └── studybuddy_seed_data.sql
+├── src/
+│   └── main/
+│       └── resources/
+│           └── application-dev.properties
+├── docker-compose.yml
+└── ...
 
+```
 ---
 
 ## 🏗️ How to Run Locally

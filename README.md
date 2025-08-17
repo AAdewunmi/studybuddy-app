@@ -125,10 +125,22 @@ studybuddy/
 
 ---
 
-## 📸 Screenshots (Coming Soon)
+## 📸 Screenshots 
+
+### - Command Line (Docker Compose + PostgreSQL database)
+  
+
+<img width="831" height="1037" alt="Image" src="https://github.com/user-attachments/assets/7719e677-855a-4be7-86c3-2deceb9ec08e" />
+
+
+### - pgAdmin (GUI to view PostgreSQL database)
+  
+
+<img width="1897" height="849" alt="Image" src="https://github.com/user-attachments/assets/c46e4c69-5723-4bb3-840f-08f20ea4a0dd" />
+
+
 
 *Add UI screenshots or wireframes as the app evolves.*
-
 ---
 
 ## 🌐 Live Demo (Coming Soon)

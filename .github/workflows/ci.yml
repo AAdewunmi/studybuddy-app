@@ -1,11 +1,10 @@
-name: CI - Build, Test, Verify DB
+name: CI - Build & Test
 
 on:
   push:
-    branches: [ master, main ]
+    branches: [ "main", "master" ]
   pull_request:
-    branches: [ master, main ]
-  workflow_dispatch:
+    branches: [ "main", "master" ]
 
 jobs:
   build:
@@ -27,40 +26,44 @@ jobs:
           --health-retries=5
 
     steps:
-      # Step 1: Checkout
+      # Step 1: Checkout repo
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      # Step 2: Set up Java
+      # Step 2: Set up JDK 17
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v3
         with:
-          distribution: temurin
-          java-version: 17
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
 
-      # Step 3: Cache Maven
-      - name: Cache Maven packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-m2
-
-      # Step 4: Wait for Postgres + Run SELECT 1
-      - name: Verify PostgreSQL connectivity
+      # Step 3: Debug system info
+      - name: Debug system info
         run: |
-          sudo apt-get install -y postgresql-client
-          echo "Waiting for Postgres..."
-          until pg_isready -h localhost -p 5432 -U studybuddy; do
-            sleep 2
-          done
-          echo "Postgres is up ✅"
-          PGPASSWORD=studybuddy psql -h localhost -U studybuddy -d studybuddydb -c "SELECT 1;"
+          echo "Java version:"
+          java -version
+          echo "Maven version:"
+          ./mvnw -v || echo "mvnw not executable"
+          echo "Current directory:"
+          pwd
+          echo "List repo files:"
+          ls -la
 
-      # Step 5: Build + Test
+      # Step 4: Ensure mvnw is executable
       - name: Make mvnw executable
         run: chmod +x mvnw
 
-      - name: Build with Maven
-        run: ./mvnw clean install -DskipTests=false
+      # Step 5: Debug Postgres connectivity
+      - name: Wait for Postgres & test connection
+        run: |
+          sudo apt-get update && sudo apt-get install -y postgresql-client
+          until pg_isready -h localhost -p 5432 -U studybuddy; do
+            echo "Waiting for Postgres..."
+            sleep 2
+          done
+          echo "SELECT 1;" | psql -h localhost -U studybuddy -d studybuddydb
+
+      # Step 6: Build with Maven (debug mode)
+      - name: Build with Maven (debug logs)
+        run: ./mvnw clean install -DskipTests=false -X

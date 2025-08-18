@@ -1,4 +1,4 @@
-name: CI - Build & Test
+name: CI - Build & Test (StudyBuddy)
 
 on:
   push:
@@ -26,11 +26,11 @@ jobs:
           --health-retries=5
 
     steps:
-      # Step 1: Checkout repo
+      # 1. Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Step 2: Set up JDK 17
+      # 2. Set up JDK 17
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
@@ -38,32 +38,21 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      # Step 3: Debug system info
-      - name: Debug system info
-        run: |
-          echo "Java version:"
-          java -version
-          echo "Maven version:"
-          ./mvnw -v || echo "mvnw not executable"
-          echo "Current directory:"
-          pwd
-          echo "List repo files:"
-          ls -la
-
-      # Step 4: Ensure mvnw is executable
-      - name: Make mvnw executable
-        run: chmod +x mvnw
-
-      # Step 5: Debug Postgres connectivity
-      - name: Wait for Postgres & test connection
+      # 3. Wait for Postgres & test connection
+      - name: Wait for Postgres & verify connectivity
         run: |
           sudo apt-get update && sudo apt-get install -y postgresql-client
+          echo "Waiting for Postgres..."
           until pg_isready -h localhost -p 5432 -U studybuddy; do
-            echo "Waiting for Postgres..."
             sleep 2
           done
-          echo "SELECT 1;" | psql -h localhost -U studybuddy -d studybuddydb
+          echo "Testing DB connection with SELECT 1..."
+          PGPASSWORD=studybuddy psql -h localhost -U studybuddy -d studybuddydb -c "SELECT 1;"
 
-      # Step 6: Build with Maven (debug mode)
-      - name: Build with Maven (debug logs)
-        run: ./mvnw clean install -DskipTests=false -X
+      # 4. Make mvnw executable
+      - name: Ensure mvnw is executable
+        run: chmod +x mvnw
+
+      # 5. Build with Maven (includes tests)
+      - name: Build with Maven
+        run: ./mvnw clean install -DskipTests=false

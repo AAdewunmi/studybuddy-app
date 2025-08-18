@@ -54,5 +54,6 @@ jobs:
         run: chmod +x mvnw
 
       # 5. Build with Maven (includes tests)
-      - name: Build with Maven
-        run: ./mvnw clean install -DskipTests=false
+      - name: Run tests with CI config
+        run: ./mvnw test -Dspring.config.name=application-ci
+

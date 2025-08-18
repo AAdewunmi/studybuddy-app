@@ -55,25 +55,30 @@ jobs:
           path: |
             **/target/surefire-reports/**
             **/target/failsafe-reports/**
+  
+  # --- OPTIONAL EXTRAS ---
+  
+  # Example: run the same job on multiple JDKs
+  # strategy:
+  #   matrix:
+  #     java: [ "17", "21" ]
+  # ... then use java-version: ${{ matrix.java }}
+  
+  # Example: if tests require a PostgreSQL service
+  services:
+    postgres:
+      image: postgres:15
+      environment:
+        POSTGRES_DB: ${POSTGRES_DB:-studybuddy}
+        POSTGRES_USER: ${POSTGRES_USER:-admin@studybuddy.com}
+        POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin123}
+      ports:
+        - "5432:5432"
+      healthcheck:
+        test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sb_user} -d ${POSTGRES_DB:-studybuddy}" ]
+        interval: 10s
+        timeout: 5s
+        retries: 5
+    runs-on:
 
-# --- OPTIONAL EXTRAS ---
-
-# Example: run the same job on multiple JDKs
-# strategy:
-#   matrix:
-#     java: [ "17", "21" ]
-# ... then use java-version: ${{ matrix.java }}
-
-# Example: if tests require a PostgreSQL service
-# services:
-#   postgres:
-#     image: postgres:15
-#     env:
-#       POSTGRES_DB: studybuddy
-#       POSTGRES_USER: sb_user
-#       POSTGRES_PASSWORD: sb_pass
-#     ports: [ "5432:5432" ]
-#     options: >-
-#       --health-cmd="pg_isready -U sb_user -d studybuddy"
-#       --health-interval=10s --health-timeout=5s --health-retries=5
-# Then point your Spring test profile to that DB or use Testcontainers.
+  # Then point your Spring test profile to that DB or use Testcontainers.

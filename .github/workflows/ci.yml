@@ -59,5 +59,8 @@ jobs:
           PGPASSWORD=studybuddy psql -h localhost -U studybuddy -d studybuddydb -c "SELECT 1;"
 
       # Step 5: Build + Test
+      - name: Make mvnw executable
+        run: chmod +x mvnw
+
       - name: Build with Maven
         run: ./mvnw clean install -DskipTests=false

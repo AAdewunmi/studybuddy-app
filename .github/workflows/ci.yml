@@ -1,49 +1,55 @@
-name: CI - Build & Test (Maven + Spring Boot + PostgreSQL)
+name: CI - Build & Test
 
 on:
-  push:       # Run on every push
-    branches: [ "main" ]
-  pull_request:  # Also run on pull requests
-    branches: [ "main" ]
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   build:
-    runs-on: ubuntu-latest   # GitHub runner environment
+    runs-on: ubuntu-latest
 
     services:
-      postgres:              # Start a PostgreSQL service container
-        image: postgres:15
+      postgres:   # <-- must be indented correctly
+        image: postgres:14
         env:
+          POSTGRES_DB: studybuddy
           POSTGRES_USER: studybuddy
           POSTGRES_PASSWORD: studybuddy
-          POSTGRES_DB: studybuddy
         ports:
           - 5432:5432
-        options: >-           # Ensure DB is healthy before tests run
-          --health-cmd="pg_isready -U studybuddy"
+        options: >-
+          --health-cmd="pg_isready -U studybuddy -d studybuddy"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
 
     steps:
-      # 1. Checkout code
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. Set up JDK
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
-          java-version: '17'
           distribution: 'temurin'
-          cache: maven   # Cache Maven deps
+          java-version: '17'
+          cache: maven
 
-      # 3. Ensure mvnw is executable
-      - name: Make mvnw executable
+      - name: Ensure Maven wrapper is executable
         run: chmod +x mvnw
 
-      # 4. Run Maven build + tests
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          until pg_isready -h localhost -p 5432 -U studybuddy; do
+            echo "Waiting for postgres..."
+            sleep 5
+          done
+
       - name: Build & Test with Maven
-        env:                # Pass DB connection info into Spring
+        env:
           SPRING_PROFILES_ACTIVE: ci
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/studybuddy
+          SPRING_DATASOURCE_USERNAME: studybuddy
+          SPRING_DATASOURCE_PASSWORD: studybuddy
         run: ./mvnw clean verify -B

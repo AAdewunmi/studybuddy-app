@@ -1,10 +1,10 @@
-name: CI - Build & Test (StudyBuddy)
+name: CI - StudyBuddy
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ "master" ]
   pull_request:
-    branches: [ "main", "master" ]
+    branches: [ "master" ]
 
 jobs:
   build:
@@ -13,24 +13,24 @@ jobs:
     services:
       postgres:
         image: postgres:15
+        ports:
+          - 5432:5432
         env:
           POSTGRES_USER: studybuddy
           POSTGRES_PASSWORD: studybuddy
-          POSTGRES_DB: studybuddydb
-        ports:
-          - 5432:5432
+          POSTGRES_DB: studybuddy_db
         options: >-
-          --health-cmd="pg_isready -U studybuddy"
+          --health-cmd="pg_isready -U studybuddy -d studybuddy_db"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
 
     steps:
-      # 1. Checkout repo
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      # Step 1: Checkout repository
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      # 2. Set up JDK 17
+      # Step 2: Set up Java
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
@@ -38,22 +38,18 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      # 3. Wait for Postgres & test connection
-      - name: Wait for Postgres & verify connectivity
+      # ✅ Optional Debug Step: Verify DB connectivity before build
+      - name: Wait for PostgreSQL and test connection
         run: |
           sudo apt-get update && sudo apt-get install -y postgresql-client
-          echo "Waiting for Postgres..."
-          until pg_isready -h localhost -p 5432 -U studybuddy; do
-            sleep 2
-          done
-          echo "Testing DB connection with SELECT 1..."
-          PGPASSWORD=studybuddy psql -h localhost -U studybuddy -d studybuddydb -c "SELECT 1;"
+          echo "Testing connection to Postgres..."
+          PGPASSWORD=studybuddy psql -h localhost -U studybuddy -d studybuddy_db -c "SELECT 1;"
 
-      # 4. Make mvnw executable
-      - name: Ensure mvnw is executable
+      # Step 3: Make Maven wrapper executable
+      - name: Make mvnw executable
         run: chmod +x mvnw
 
-      # 5. Build with Maven (includes tests)
-      - name: Run tests with CI config
-        run: ./mvnw test -Dspring.config.name=application-ci
+      # Step 4: Build + run tests
+      - name: Build with Maven (includes tests)
+        run: ./mvnw clean install -DskipTests=false
 

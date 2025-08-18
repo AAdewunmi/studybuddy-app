@@ -52,4 +52,9 @@ jobs:
       # Step 4: Build + run tests
       - name: Build with Maven (includes tests)
         run: ./mvnw clean install -DskipTests=false
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/studybuddy_db
+          SPRING_DATASOURCE_USERNAME: studybuddy
+          SPRING_DATASOURCE_PASSWORD: studybuddy
+
 

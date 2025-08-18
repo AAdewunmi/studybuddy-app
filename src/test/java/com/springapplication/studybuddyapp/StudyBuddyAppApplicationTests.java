@@ -1,19 +1,19 @@
 package com.springapplication.studybuddyapp;
 
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 class StudyBuddyAppApplicationTests {
 
     @Autowired
-    private DataSource dataSource;
+    private JdbcTemplate jdbcTemplate;
 
     @Test
     void contextLoads() {
@@ -21,10 +21,9 @@ class StudyBuddyAppApplicationTests {
 
     @Test
     void testPostgresConnection() throws Exception {
-        try (Connection conn = dataSource.getConnection()) {
-            assertNotNull(conn, "Connection should not be null");
-            assertFalse(conn.isClosed(), "Connection should be open");
-        }
+        // Simple query to ensure PostgreSQL is reachable
+        Integer result = jdbcTemplate.queryForObject("SELECT 1", Integer.class);
+        assertThat(result).isEqualTo(1);
     }
 
 }

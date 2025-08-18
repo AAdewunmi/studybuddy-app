@@ -1,97 +1,49 @@
-name: CI (Build & Test)
+name: CI - Build & Test (Maven + Spring Boot + PostgreSQL)
 
-# When to run this workflow
 on:
-  push:
-    branches: [ "main", "develop", "feature/**" ]   # adjust to your flow
-  pull_request:
-    branches: [ "main", "develop" ]
-
-# Cancel older runs for the same branch/PR to save minutes
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  push:       # Run on every push
+    branches: [ "main" ]
+  pull_request:  # Also run on pull requests
+    branches: [ "main" ]
 
 jobs:
-  build-and-test:
-    name: Build & Test (JDK 17)
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
+  build:
+    runs-on: ubuntu-latest   # GitHub runner environment
+
     services:
-      postgres:
+      postgres:              # Start a PostgreSQL service container
         image: postgres:15
         env:
+          POSTGRES_USER: studybuddy
+          POSTGRES_PASSWORD: studybuddy
           POSTGRES_DB: studybuddy
-          POSTGRES_USER: admin@studybuddy.com
-          POSTGRES_PASSWORD: admin123
         ports:
-          - "5432:5432"
-        options: >-
-          --health-cmd="pg_isready -U sb_user -d studybuddy"
-          --health-interval=10s --health-timeout=5s --health-retries=5
+          - 5432:5432
+        options: >-           # Ensure DB is healthy before tests run
+          --health-cmd="pg_isready -U studybuddy"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
     steps:
-      # 1) Check out repository code
-      - name: Checkout
-        uses: actions/checkout@v4
+      # 1. Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      # 2) Set up Java (Temurin) and enable built-in Maven cache
-      - name: Set up JDK
-        uses: actions/setup-java@v4
+      # 2. Set up JDK
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
         with:
-          distribution: temurin
-          java-version: "17"          # or "21"
-          cache: maven                # caches ~/.m2 automatically
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven   # Cache Maven deps
 
-      # (Optional) Show versions in logs for easier debugging
-      - name: Show tool versions
-        run: |
-          java -version
-          ./mvnw -v
+      # 3. Ensure mvnw is executable
+      - name: Make mvnw executable
+        run: chmod +x mvnw
 
-      # 3) Build (compile + package) without running tests
-      - name: Build (skip tests)
-        run: ./mvnw -B -DskipTests package
-
-      # 4) Run unit/integration tests
-      - name: Test
-        run: ./mvnw -B test
-
-      # 5) Always upload test reports to help debug failures
-      - name: Upload test reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: surefire-reports
-          path: |
-            **/target/surefire-reports/**
-            **/target/failsafe-reports/**
-  # ... existing code ...
-
-  # --- OPTIONAL EXTRAS ---
-
-  # Example: run the same job on multiple JDKs
-  # strategy:
-  #   matrix:
-  #     java: [ "17", "21" ]
-  # ... then use java-version: ${{ matrix.java }}
-
-  # Example: if tests require a PostgreSQL service
-  # services:
-  #   postgres:
-  #     image: postgres:15
-  #     environment:
-  #       POSTGRES_DB: ${POSTGRES_DB:-studybuddy}
-  #       POSTGRES_USER: ${POSTGRES_USER:-admin@studybuddy.com}
-  #       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin123}
-  #     ports:
-  #       - "5432:5432"
-  #     healthcheck:
-  #       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sb_user} -d ${POSTGRES_DB:-studybuddy}" ]
-  #       interval: 10s
-  #       timeout: 5s
-  #       retries: 5
-  #   runs-on:
-
-  # Then point your Spring test profile to that DB or use Testcontainers.
-# ... existing code ...
+      # 4. Run Maven build + tests
+      - name: Build & Test with Maven
+        env:                # Pass DB connection info into Spring
+          SPRING_PROFILES_ACTIVE: ci
+        run: ./mvnw clean verify -B

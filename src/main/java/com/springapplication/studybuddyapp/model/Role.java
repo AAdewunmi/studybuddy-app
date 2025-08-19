@@ -1,4 +1,4 @@
-package com.springapplication.studybuddyapp.entities;
+package com.springapplication.studybuddyapp.model;
 
 import jakarta.persistence.*;
 import java.util.HashSet;

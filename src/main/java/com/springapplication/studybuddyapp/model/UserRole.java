@@ -1,6 +1,8 @@
 package com.springapplication.studybuddyapp.model;
 
 import jakarta.persistence.*;
+
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
@@ -13,7 +15,7 @@ import java.util.Objects;
  */
 @Entity
 @Table(name = "user_roles")
-public class UserRole {
+public class UserRole implements Serializable {
 
     /** Composite primary key: (user_id, role_id). */
     @EmbeddedId
@@ -32,7 +34,7 @@ public class UserRole {
     private Role role;
 
     /** Optional metadata (example). */
-    @Column(name = "assigned_at", nullable = false)
+    @Column(name = "assigned_at", nullable = false, updatable = false)
     private LocalDateTime assignedAt = LocalDateTime.now();
 
     // -------------------- Constructors --------------------

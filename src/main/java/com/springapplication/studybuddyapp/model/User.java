@@ -1,6 +1,10 @@
 package com.springapplication.studybuddyapp.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.HashSet;
@@ -8,11 +12,17 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Application user (normalized schema).
+ * Application user entity (normalized schema).
  *
- * <p>Maps to the {@code users} table and does NOT contain a "role" column.
- * Roles are associated via the join table {@code user_roles} using
- * the {@link UserRole} entity below.</p>
+ * <p>This entity maps to the {@code users} table and uses a normalized schema
+ * for roles via a join entity {@link UserRole}, allowing additional metadata
+ * on the user-role relationship if needed.</p>
+ *
+ * <p>Each user has a unique email, a display name, and a securely hashed
+ * password (e.g., BCrypt). The entity also tracks creation time.</p>
+ *
+ * @see Role
+ * @see UserRole
  */
 @Entity
 @Table(
@@ -23,34 +33,40 @@ import java.util.Set;
 )
 public class User {
 
-    /** Primary key (serial). */
+    /** Primary key (auto-generated). */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /** Display name. */
+    /** Display name shown on dashboards, groups, etc. */
+    @NotBlank
+    @Size(min = 2, max = 100)
     @Column(nullable = false)
     private String name;
 
-    /** Unique email (used for login / identity). */
+    /** Unique email address used for login/identity. */
+    @NotBlank
+    @Email
+    @Size(max = 150)
     @Column(nullable = false, unique = true, length = 150)
     private String email;
 
-    /** BCrypt (or similar) hashed password. */
+    /** Hashed password (BCrypt or similar). */
+    @NotBlank
+    @Size(min = 8)
     @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
 
-    /** Account creation timestamp. */
+    /** Account creation timestamp (default: now). */
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
     /**
-     * User-role links (owned side is UserRole with composite key).
+     * Role links for this user (many-to-many via join entity).
      *
-     * <p>We keep the association on the join entity to allow additional
-     * attributes in the future (e.g., assignedAt). If you prefer a plain
-     * ManyToMany, you can map {@code Set<Role>} via {@code @ManyToMany} with
-     * {@code @JoinTable} — but the join-entity approach is more flexible.</p>
+     * <p>The owning side is {@link UserRole}. We use {@code orphanRemoval}
+     * to delete dangling links and allow full lifecycle management from
+     * the {@code User} side.</p>
      */
     @OneToMany(
             mappedBy = "user",
@@ -60,11 +76,15 @@ public class User {
     )
     private Set<UserRole> userRoles = new HashSet<>();
 
-    // -------------------- Convenience accessors --------------------
+    // -------------------- Role accessors --------------------
 
     /**
      * Read-only view of the user's roles.
-     * Use {@link #addRole(Role)} / {@link #removeRole(Role)} to modify.
+     *
+     * <p>To modify, use {@link #addRole(Role)} or {@link #removeRole(Role)}.
+     * This getter is marked {@code @Transient} so JPA doesn't treat it as a column.</p>
+     *
+     * @return unmodifiable set of roles
      */
     @Transient
     public Set<Role> getRoles() {
@@ -76,7 +96,12 @@ public class User {
         return Collections.unmodifiableSet(roles);
     }
 
-    /** Attach a role to this user (idempotent). */
+    /**
+     * Add a role to this user (idempotent).
+     * Also maintains reverse relationship on {@link Role#getUserRoles()}.
+     *
+     * @param role role to assign
+     */
     public void addRole(Role role) {
         Objects.requireNonNull(role, "role must not be null");
         UserRole link = new UserRole(this, role);
@@ -84,12 +109,18 @@ public class User {
         role.getUserRoles().add(link);
     }
 
-    /** Detach a role from this user (safe if absent). */
+    /**
+     * Remove a role from this user (safe if role is not assigned).
+     *
+     * @param role role to remove
+     */
     public void removeRole(Role role) {
         if (role == null) return;
         userRoles.removeIf(ur -> {
             boolean match = ur.getRole().equals(role);
-            if (match) role.getUserRoles().remove(ur);
+            if (match) {
+                role.getUserRoles().remove(ur);
+            }
             return match;
         });
     }
@@ -114,4 +145,5 @@ public class User {
     public Set<UserRole> getUserRoles() { return userRoles; }
     public void setUserRoles(Set<UserRole> userRoles) { this.userRoles = userRoles; }
 }
+
 

@@ -49,6 +49,9 @@ jobs:
       - name: Make mvnw executable
         run: chmod +x mvnw
 
+      - name: Run tests
+        run: mvn test -Dspring.profiles.active=ci
+
       # Step 4: Build + run tests
       - name: Build with Maven (includes tests)
         run: ./mvnw clean install -DskipTests=false

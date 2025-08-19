@@ -140,7 +140,14 @@ studybuddy/
 
 
 
-*Add UI screenshots or wireframes as the app evolves.*
+### - GitHub Actions Workflow with DB Connectivity Test
+
+
+<img width="1047" height="559" alt="Image" src="https://github.com/user-attachments/assets/423417f1-b5c9-4ab7-b656-8400acd7b3b5" />
+
+
+
+*Will add UI screenshots or wireframes as the app evolves.*
 ---
 
 ## 🌐 Live Demo (Coming Soon)

@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+/** Unit tests for AuthService signup. */
 class AuthServiceTest {
 
     private UserRepository users;
@@ -45,13 +46,13 @@ class AuthServiceTest {
 
         User saved = new User(); saved.setId(10L); saved.setEmail("alice@example.com"); saved.setName("Alice"); saved.setPasswordHash("ENC");
         when(users.save(any(User.class))).thenReturn(saved);
-        when(users.findByIdWithRoles(10L)).thenReturn(Optional.of(saved)); // response mapping
 
         UserResponse res = service.signup("Alice", "alice@example.com", "StrongP@ss1");
 
         assertThat(res.getEmail()).isEqualTo("alice@example.com");
+        assertThat(res.getRoles()).contains("ROLE_USER");
+
         verify(encoder).encode("StrongP@ss1");
-        // captured link creation
         ArgumentCaptor<com.springapplication.studybuddyapp.model.UserRole> link = ArgumentCaptor.forClass(com.springapplication.studybuddyapp.model.UserRole.class);
         verify(userRoles).save(link.capture());
         assertThat(link.getValue().getRole().getName()).isEqualTo("ROLE_USER");
@@ -67,7 +68,7 @@ class AuthServiceTest {
     @Test
     void signup_weakPassword_badRequest() {
         when(users.existsByEmailIgnoreCase("weak@example.com")).thenReturn(false);
-        assertThatThrownBy(() -> service.signup("Weak", "weak@example.com", "weak")) // not strong
+        assertThatThrownBy(() -> service.signup("Weak", "weak@example.com", "weak"))
                 .isInstanceOf(BadRequestException.class);
     }
 
@@ -83,4 +84,3 @@ class AuthServiceTest {
                 .isInstanceOf(NotFoundException.class);
     }
 }
-

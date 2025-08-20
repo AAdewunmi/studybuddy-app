@@ -26,7 +26,6 @@ import org.springframework.stereotype.Service;
 public class AuthService {
 
     private static final Pattern STRONG_PASSWORD = Pattern.compile(
-            // at least 1 lower, 1 upper, 1 digit, 1 special, total length validated by annotation/service
             "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[~!@#$%^&*()_+\\-={}\\[\\]|:;\"'<>,.?/]).{8,72}$"
     );
 
@@ -44,10 +43,8 @@ public class AuthService {
 
     /**
      * Sign up a new user.
-     * - Ensures unique email
-     * - Validates password strength
-     * - Hashes password with BCrypt
-     * - Assigns default role ROLE_USER (falls back to USER if that's what's present)
+     * Ensures unique email, validates strength, hashes password,
+     * assigns default role (ROLE_USER preferred; USER fallback) and returns a DTO.
      */
     public UserResponse signup(String username, String email, String rawPassword) {
         if (users.existsByEmailIgnoreCase(email)) {
@@ -58,27 +55,24 @@ public class AuthService {
         }
 
         User u = new User();
-        u.setName(username);                               // mapping username -> display name column
+        u.setName(username);
         u.setEmail(email);
         u.setPasswordHash(encoder.encode(rawPassword));
         u = users.save(u);
 
-        // Prefer ROLE_USER, but support older USER naming if your DB has that
+        // Resolve default role
         Role defaultRole = roles.findByName("ROLE_USER")
                 .orElseGet(() -> roles.findByName("USER")
                         .orElseThrow(() -> new NotFoundException("Default role ROLE_USER/USER not found")));
+
+        // Persist link
         userRoles.save(new UserRole(u, defaultRole));
 
-        // reload with roles and map to response
-        User reloaded = users.findByIdWithRoles(u.getId()).orElseThrow();
-        return toResponse(reloaded);
-    }
-
-    private UserResponse toResponse(User u) {
-        Set<String> roleNames = u.getUserRoles().stream()
-                .map(ur -> ur.getRole().getName())
-                .collect(Collectors.toSet());
+        // ✅ Build response directly from what we assigned (no reload)
+        java.util.Set<String> roleNames = java.util.Set.of(defaultRole.getName());
         return new UserResponse(u.getId(), u.getName(), u.getEmail(), roleNames, u.getCreatedAt());
     }
+
+    // (other methods unchanged)
 }
 

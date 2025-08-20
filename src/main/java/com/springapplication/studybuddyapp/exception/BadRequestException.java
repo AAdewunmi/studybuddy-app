@@ -1,4 +1,3 @@
-// path: src/main/java/com/springapplication/studybuddyapp/exception/BadRequestException.java
 package com.springapplication.studybuddyapp.exception;
 
 /** 400 Bad Request for validation or mismatch errors. */

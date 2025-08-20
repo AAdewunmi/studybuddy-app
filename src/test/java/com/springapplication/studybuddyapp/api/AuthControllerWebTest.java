@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.springapplication.studybuddyapp.controller.AuthController;
 import com.springapplication.studybuddyapp.service.AuthService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,12 +35,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 /**
- * Web-layer unit tests for /auth/login and /logout with a test-only SecurityFilterChain:
- * - /auth/** is permitted
- * - CSRF ignored for /auth/** and /logout (dev-friendly)
- *
- * We assert the session + SecurityContext rather than a Set-Cookie header,
- * because MockMvc may not emit Set-Cookie in this slice even when a session exists.
+ * Web-layer tests for /auth/login and /logout using a test-only security chain:
+ * - /auth/** permitted
+ * - CSRF ignored for /auth/** and /logout
+ * - logout returns 200 + {"message":"Logout successful"}
  */
 @WebMvcTest(AuthController.class)
 @AutoConfigureMockMvc(addFilters = true)
@@ -48,18 +47,16 @@ class AuthControllerWebTest {
 
     @Autowired MockMvc mvc;
 
-    @MockBean AuthService authService; // controller dependency (not used in login tests)
+    @MockBean AuthService authService;               // Controller ctor dep
     @MockBean AuthenticationManager authenticationManager;
 
     @Test
-    void login_createsSessionWithSecurityContext_and_logoutWorks() throws Exception {
-        // Mock successful authentication
+    void login_createsSession_and_logoutReturnsJson() throws Exception {
         Authentication auth =
                 new UsernamePasswordAuthenticationToken("alice@example.com", "x", java.util.Collections.emptyList());
         when(authenticationManager.authenticate(any(Authentication.class))).thenReturn(auth);
 
-        // Perform login
-        MvcResult loginResult = mvc.perform(post("/auth/login")
+        MvcResult login = mvc.perform(post("/auth/login")
                         .with(SecurityMockMvcRequestPostProcessors.csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -69,15 +66,15 @@ class AuthControllerWebTest {
                 .andExpect(jsonPath("$.message").value("Login successful"))
                 .andReturn();
 
-        // ✅ Assert session exists and contains the SecurityContext
-        HttpSession session = loginResult.getRequest().getSession(false);
-        org.assertj.core.api.Assertions.assertThat(session).as("session should be created").isNotNull();
+        HttpSession session = login.getRequest().getSession(false);
+        org.assertj.core.api.Assertions.assertThat(session).isNotNull();
         Object ctxAttr = session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
-        org.assertj.core.api.Assertions.assertThat(ctxAttr).as("SPRING_SECURITY_CONTEXT present in session").isNotNull();
+        org.assertj.core.api.Assertions.assertThat(ctxAttr).isNotNull();
 
-        // Logout with the same session
         mvc.perform(post("/logout").session((org.springframework.mock.web.MockHttpSession) session))
-                .andExpect(status().isOk()); // 200 per TestSecurityConfig's logoutSuccessHandler
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(content().json("{\"message\":\"Logout successful\"}"));
     }
 
     @Test
@@ -95,7 +92,7 @@ class AuthControllerWebTest {
                 .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
     }
 
-    /** Minimal security for tests: allow /auth/** and /logout; ignore CSRF; logout returns 200. */
+    /** Test-only minimal security chain mirroring production behavior needed for these tests. */
     @TestConfiguration
     static class TestSecurityConfig {
         @Bean
@@ -108,17 +105,17 @@ class AuthControllerWebTest {
                     )
                     .logout(logout -> logout
                             .logoutUrl("/logout")
-                            .logoutSuccessHandler((req, res, auth) -> res.setStatus(200)) // 200 OK on logout
+                            .logoutSuccessHandler((req, res, auth) -> {
+                                res.setStatus(HttpServletResponse.SC_OK);
+                                res.setContentType("application/json");
+                                res.getWriter().write("{\"message\":\"Logout successful\"}");
+                            })
                     )
                     .formLogin(Customizer.withDefaults());
             return http.build();
         }
 
         @Bean PasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(); }
-
-        @Bean SecurityContextRepository securityContextRepository() {
-            return new HttpSessionSecurityContextRepository();
-        }
+        @Bean SecurityContextRepository securityContextRepository() { return new HttpSessionSecurityContextRepository(); }
     }
 }
-

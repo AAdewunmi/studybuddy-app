@@ -11,26 +11,25 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * Minimal HTTP security + password encoder.
- * Registers our DAO provider into the filter chain.
+ * Production security setup.
+ * - Permits /auth/** (signup/login)
+ * - Ignores CSRF for /auth/** for simple API usage while developing
  */
 @Configuration
 public class SecurityConfig {
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+    public PasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(); }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    DaoAuthenticationProvider daoAuthenticationProvider) throws Exception {
         http
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/auth/**")) // allow POST /auth/signup without CSRF token
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/auth/**"))
                 .authenticationProvider(daoAuthenticationProvider)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/assets/**", "/css/**", "/js/**").permitAll()
-                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/auth/**").permitAll()    // allow login/signup
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )

@@ -1,4 +1,4 @@
-package com.springapplication.studybuddyapp.api;
+package com.springapplication.studybuddyapp.controller;
 
 import com.springapplication.studybuddyapp.api.dto.*;
 import com.springapplication.studybuddyapp.model.User;

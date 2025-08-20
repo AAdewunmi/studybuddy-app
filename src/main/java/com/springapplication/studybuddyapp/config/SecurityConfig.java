@@ -26,19 +26,16 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    DaoAuthenticationProvider daoAuthenticationProvider) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/auth/**")) // allow POST /auth/signup without CSRF token
                 .authenticationProvider(daoAuthenticationProvider)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/login", "/signup", "/assets/**", "/css/**", "/js/**", "/api/public/**").permitAll()
-                        .requestMatchers("/api/users/**").permitAll()
+                        .requestMatchers("/", "/assets/**", "/css/**", "/js/**").permitAll()
+                        .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
-                .httpBasic(Customizer.withDefaults())      // basic auth (for quick testing)
-                .formLogin(form -> form                    // or form login if you have a template at /login
-                        .loginPage("/login").permitAll()
-                        .defaultSuccessUrl("/dashboard", true)
-                )
+                .httpBasic(Customizer.withDefaults())
+                .formLogin(form -> form.loginPage("/login").permitAll().defaultSuccessUrl("/dashboard", true))
                 .logout(logout -> logout.logoutUrl("/logout").logoutSuccessUrl("/"));
         return http.build();
     }

@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @WebMvcTest(controllers = SecurityConfigWebTest.DashboardStub.class)
 @Import(TestSecurityConfig.class)              // use our minimal rules
-@AutoConfigureMockMvc(addFilters = true)       // 🔑 include Spring Security filter chain
+@AutoConfigureMockMvc(addFilters = true)       // include Spring Security filter chain
 class SecurityConfigWebTest {
 
     @Autowired

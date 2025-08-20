@@ -1,0 +1,135 @@
+// path: src/main/java/com/springapplication/studybuddyapp/service/UserService.java
+package com.springapplication.studybuddyapp.service;
+
+import com.springapplication.studybuddyapp.exception.BadRequestException;
+import com.springapplication.studybuddyapp.exception.ConflictException;
+import com.springapplication.studybuddyapp.exception.NotFoundException;
+import com.springapplication.studybuddyapp.model.Role;
+import com.springapplication.studybuddyapp.model.User;
+import com.springapplication.studybuddyapp.model.UserRole;
+import com.springapplication.studybuddyapp.repository.RoleRepository;
+import com.springapplication.studybuddyapp.repository.UserRepository;
+import com.springapplication.studybuddyapp.repository.UserRoleRepository;
+import jakarta.transaction.Transactional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+/**
+ * UserService handles user lifecycle: create, read, update, delete,
+ * change password, and role management.
+ */
+@Service
+@Transactional
+public class UserService {
+
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final UserRoleRepository userRoleRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    public UserService(UserRepository userRepository,
+                       RoleRepository roleRepository,
+                       UserRoleRepository userRoleRepository,
+                       PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
+        this.userRoleRepository = userRoleRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    /** Create a new user with default role USER. */
+    public User createUser(String name, String email, String rawPassword) {
+        if (userRepository.existsByEmailIgnoreCase(email)) {
+            throw new ConflictException("Email already in use: " + email);
+        }
+        if (rawPassword.length() < 8) {
+            throw new BadRequestException("Password must be at least 8 characters");
+        }
+        User u = new User();
+        u.setName(name);
+        u.setEmail(email);
+        u.setPasswordHash(passwordEncoder.encode(rawPassword));
+        u = userRepository.save(u);
+
+        Role userRole = roleRepository.findByName("USER")
+                .orElseThrow(() -> new NotFoundException("Default role USER not found"));
+        userRoleRepository.save(new UserRole(u, userRole));
+
+        return u;
+    }
+
+    /** Get by id or 404. */
+    public User getUser(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("User not found: " + id));
+    }
+
+    /** List all users (lightweight). */
+    public java.util.List<User> listUsers() {
+        return userRepository.findAll();
+    }
+
+    /** Update name and/or email. */
+    public User updateProfile(Long id, String name, String email) {
+        User u = getUser(id);
+
+        if (!u.getEmail().equalsIgnoreCase(email)
+                && userRepository.existsByEmailIgnoreCase(email)) {
+            throw new ConflictException("Email already in use: " + email);
+        }
+        u.setName(name);
+        u.setEmail(email);
+        return userRepository.save(u);
+    }
+
+    /** Change password with current password verification. */
+    public void changePassword(Long id, String currentPassword, String newPassword) {
+        if (newPassword == null || newPassword.length() < 8) {
+            throw new BadRequestException("New password must be at least 8 characters");
+        }
+        User u = getUser(id);
+        if (!passwordEncoder.matches(currentPassword, u.getPasswordHash())) {
+            throw new BadRequestException("Current password is incorrect");
+        }
+        u.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(u);
+    }
+
+    /** Add role to user if absent (e.g., ADMIN). */
+    public void addRole(Long id, String roleName) {
+        User u = getUser(id);
+        Role r = roleRepository.findByName(roleName)
+                .orElseThrow(() -> new NotFoundException("Role not found: " + roleName));
+
+        if (!userRoleRepository.existsByUser_IdAndRole_Name(u.getId(), r.getName())) {
+            userRoleRepository.save(new UserRole(u, r));
+        }
+    }
+
+    /** Remove role if present. */
+    public void removeRole(Long id, String roleName) {
+        User u = getUser(id);
+        java.util.List<com.springapplication.studybuddyapp.model.UserRole> links =
+                userRoleRepository.findByUser_Id(u.getId());
+        links.stream()
+                .filter(ur -> ur.getRole().getName().equals(roleName))
+                .forEach(userRoleRepository::delete);
+    }
+
+    /** Delete user and cascade remove links. */
+    public void deleteUser(Long id) {
+        User u = getUser(id);
+        userRepository.delete(u);
+    }
+
+    /** Utility: return role names for a user. */
+    public Set<String> roleNames(User u) {
+        return u.getUserRoles().stream()
+                .map(ur -> ur.getRole().getName())
+                .collect(Collectors.toSet());
+    }
+}
+
+

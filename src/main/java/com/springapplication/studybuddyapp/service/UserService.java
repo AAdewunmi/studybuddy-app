@@ -1,4 +1,3 @@
-// path: src/main/java/com/springapplication/studybuddyapp/service/UserService.java
 package com.springapplication.studybuddyapp.service;
 
 import com.springapplication.studybuddyapp.exception.BadRequestException;

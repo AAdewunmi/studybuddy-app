@@ -35,6 +35,7 @@ public class SecurityConfig {
                 )
                 .httpBasic(Customizer.withDefaults())
                 .formLogin(form -> form.loginPage("/login").permitAll().defaultSuccessUrl("/dashboard", true))
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/auth/**", "/logout")) // add "/logout"
                 .logout(logout -> logout.logoutUrl("/logout").logoutSuccessUrl("/"));
         return http.build();
     }

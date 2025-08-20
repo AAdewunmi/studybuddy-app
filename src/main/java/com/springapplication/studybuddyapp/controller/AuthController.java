@@ -1,5 +1,5 @@
 // path: src/main/java/com/springapplication/studybuddyapp/api/AuthController.java
-package com.springapplication.studybuddyapp.api;
+package com.springapplication.studybuddyapp.controller;
 
 import com.springapplication.studybuddyapp.api.dto.LoginRequest;
 import com.springapplication.studybuddyapp.api.dto.SignupRequest;

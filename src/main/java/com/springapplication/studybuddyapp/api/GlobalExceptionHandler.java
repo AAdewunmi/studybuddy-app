@@ -1,3 +1,4 @@
+// path: src/main/java/com/springapplication/studybuddyapp/api/GlobalExceptionHandler.java
 package com.springapplication.studybuddyapp.api;
 
 import com.springapplication.studybuddyapp.exception.BadRequestException;
@@ -7,6 +8,8 @@ import java.time.Instant;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -34,6 +37,13 @@ public class GlobalExceptionHandler {
                 .body(error("BAD_REQUEST", ex.getMessage()));
     }
 
+    /** Map authentication failures (e.g., wrong email/password) to 401. */
+    @ExceptionHandler({BadCredentialsException.class, AuthenticationException.class})
+    public ResponseEntity<?> handleAuth(AuthenticationException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(error("UNAUTHORIZED", ex.getMessage()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleOther(Exception ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -44,4 +54,3 @@ public class GlobalExceptionHandler {
         return Map.of("timestamp", Instant.now().toString(), "code", code, "message", message);
     }
 }
-

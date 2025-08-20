@@ -1,0 +1,90 @@
+// path: src/test/java/com/springapplication/studybuddyapp/service/UserServiceTest.java
+package com.springapplication.studybuddyapp.service;
+
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import com.springapplication.studybuddyapp.exception.BadRequestException;
+import com.springapplication.studybuddyapp.exception.ConflictException;
+import com.springapplication.studybuddyapp.exception.NotFoundException;
+import com.springapplication.studybuddyapp.model.Role;
+import com.springapplication.studybuddyapp.model.User;
+import com.springapplication.studybuddyapp.model.UserRole;
+import com.springapplication.studybuddyapp.repository.RoleRepository;
+import com.springapplication.studybuddyapp.repository.UserRepository;
+import com.springapplication.studybuddyapp.repository.UserRoleRepository;
+import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+class UserServiceTest {
+
+    private UserRepository userRepository;
+    private RoleRepository roleRepository;
+    private UserRoleRepository userRoleRepository;
+    private PasswordEncoder passwordEncoder;
+    private UserService userService;
+
+    @BeforeEach
+    void setup() {
+        userRepository = mock(UserRepository.class);
+        roleRepository = mock(RoleRepository.class);
+        userRoleRepository = mock(UserRoleRepository.class);
+        passwordEncoder = mock(PasswordEncoder.class);
+
+        userService = new UserService(userRepository, roleRepository, userRoleRepository, passwordEncoder);
+    }
+
+    @Test
+    void createUser_success_assignsUSER() {
+        when(userRepository.existsByEmailIgnoreCase("a@x.com")).thenReturn(false);
+        when(passwordEncoder.encode("Password123")).thenReturn("ENC");
+        Role userRole = new Role("USER");
+        userRole.setId(1);
+        when(roleRepository.findByName("USER")).thenReturn(Optional.of(userRole));
+        User saved = new User();
+        saved.setId(42L);
+        saved.setEmail("a@x.com");
+        when(userRepository.save(any(User.class))).thenReturn(saved);
+
+        User u = userService.createUser("Alice", "a@x.com", "Password123");
+
+        assertThat(u.getId()).isEqualTo(42L);
+        ArgumentCaptor<UserRole> link = ArgumentCaptor.forClass(UserRole.class);
+        verify(userRoleRepository).save(link.capture());
+        assertThat(link.getValue().getRole().getName()).isEqualTo("USER");
+    }
+
+    @Test
+    void createUser_duplicateEmail_throwsConflict() {
+        when(userRepository.existsByEmailIgnoreCase("a@x.com")).thenReturn(true);
+        assertThatThrownBy(() -> userService.createUser("A", "a@x.com", "Password123"))
+                .isInstanceOf(ConflictException.class);
+    }
+
+    @Test
+    void changePassword_wrongCurrent_throws() {
+        User u = new User();
+        u.setId(10L);
+        u.setPasswordHash("ENC");
+        when(userRepository.findById(10L)).thenReturn(Optional.of(u));
+        when(passwordEncoder.matches("bad", "ENC")).thenReturn(false);
+
+        assertThatThrownBy(() -> userService.changePassword(10L, "bad", "NewPass123"))
+                .isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void addRole_missingRole_throwsNotFound() {
+        User u = new User();
+        u.setId(10L);
+        when(userRepository.findById(10L)).thenReturn(Optional.of(u));
+        when(roleRepository.findByName("ADMIN")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userService.addRole(10L, "ADMIN"))
+                .isInstanceOf(NotFoundException.class);
+    }
+}
+

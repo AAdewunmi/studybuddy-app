@@ -1,4 +1,4 @@
-package security;
+package com.springapplication.studybuddyapp.security;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;

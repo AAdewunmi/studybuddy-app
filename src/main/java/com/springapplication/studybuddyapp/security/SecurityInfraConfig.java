@@ -7,16 +7,15 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.security.web.context.SecurityContextRepository;
 
 /**
- * Provides infrastructure beans used by authentication endpoints.
- * In particular, a SecurityContextRepository that persists authentication
- * into the HTTP session so subsequent requests are authenticated.
+ * Infrastructure bean that persists the authenticated SecurityContext
+ * into the HTTP session (used by /auth/login controller).
  */
 @Configuration
 public class SecurityInfraConfig {
 
-    /** Stores/retrieves SecurityContext in/from the HttpSession. */
     @Bean
     public SecurityContextRepository securityContextRepository() {
         return new HttpSessionSecurityContextRepository();
     }
 }
+

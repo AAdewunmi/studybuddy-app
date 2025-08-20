@@ -38,7 +38,7 @@ public class AuthController {
         this.securityContextRepository = securityContextRepository;
     }
 
-    /** POST /auth/signup — creates a user, hashes password, assigns default role. */
+    /** POST /auth/signup – create user, hash password, default role. */
     @PostMapping("/signup")
     @ResponseStatus(HttpStatus.CREATED)
     public UserResponse signup(@Valid @RequestBody SignupRequest req) {
@@ -46,10 +46,8 @@ public class AuthController {
     }
 
     /**
-     * POST /auth/login — authenticates credentials using AuthenticationManager and
-     * persists the SecurityContext to the HTTP session (via SecurityContextRepository).
-     *
-     * @return 200 OK + {"message":"Login successful"} on success.
+     * POST /auth/login – authenticates via AuthenticationManager and persists
+     * the SecurityContext into the HTTP session.
      */
     @PostMapping("/login")
     public ResponseEntity<Map<String, String>> login(@Valid @RequestBody LoginRequest req,
@@ -59,7 +57,6 @@ public class AuthController {
                 new UsernamePasswordAuthenticationToken(req.getEmail(), req.getPassword())
         );
 
-        // Build a new context and save it to session so future requests are authenticated.
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(authentication);
         SecurityContextHolder.setContext(context);

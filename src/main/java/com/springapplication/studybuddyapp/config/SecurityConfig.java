@@ -1,37 +1,47 @@
+// path: src/main/java/com/springapplication/studybuddyapp/security/SecurityConfig.java
 package com.springapplication.studybuddyapp.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 
+/**
+ * Minimal HTTP security + password encoder.
+ * Registers our DAO provider into the filter chain.
+ */
 @Configuration
 public class SecurityConfig {
 
-    // ---- Password encoder (BCrypt) ----
     @Bean
     public PasswordEncoder passwordEncoder() {
-        // 10–12 is a good cost for dev; increase for prod if CPU budget allows
-        return new BCryptPasswordEncoder(12);
+        return new BCryptPasswordEncoder();
     }
 
-    // ---- Security filter chain (no WebSecurityConfigurerAdapter in Spring Security 6) ----
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                                   DaoAuthenticationProvider daoAuthenticationProvider) throws Exception {
         http
-                .authorizeHttpRequests(reg -> reg
-                        .requestMatchers("/", "/auth/**", "/css/**", "/js/**", "/img/**").permitAll()
+                .csrf(csrf -> csrf.disable())
+                .authenticationProvider(daoAuthenticationProvider)
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/", "/login", "/signup", "/assets/**", "/css/**", "/js/**", "/api/public/**").permitAll()
+                        .requestMatchers("/api/users/**").permitAll()
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
-                .formLogin(login -> login
-                        .loginPage("/auth/login")
-                        .permitAll()
+                .httpBasic(Customizer.withDefaults())      // basic auth (for quick testing)
+                .formLogin(form -> form                    // or form login if you have a template at /login
+                        .loginPage("/login").permitAll()
+                        .defaultSuccessUrl("/dashboard", true)
                 )
-                .logout(logout -> logout.permitAll());
-
+                .logout(logout -> logout.logoutUrl("/logout").logoutSuccessUrl("/"));
         return http.build();
     }
 }
+
 

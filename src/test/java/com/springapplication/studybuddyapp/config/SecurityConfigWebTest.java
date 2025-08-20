@@ -1,5 +1,6 @@
 package com.springapplication.studybuddyapp.config;
 
+import com.springapplication.studybuddyapp.config.SecurityConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;

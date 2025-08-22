@@ -1,5 +1,6 @@
 package com.springapplication.studybuddyapp.controller;
 
+import com.springapplication.studybuddyapp.api.dto.SignupForm;
 import com.springapplication.studybuddyapp.service.UserService;
 
 import jakarta.validation.Valid;

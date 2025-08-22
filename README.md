@@ -34,7 +34,7 @@ Built using **Spring Boot**, **Thymeleaf**, and **PostgreSQL**, the app demonstr
 | Deployment   | Render / Railway (planned)              |
 | Testing      | JUnit, Mockito                          |
 | Tools        | Docker, Docker Compose                  
-| Documentation| Google Docs                             |
+| Documentation| Google Docs, Google Sheets                            |
 | CI/CD        | GitHub Actions                          |
 | Version Control | GitHub                               |
 |-----------------|--------------------------------------|

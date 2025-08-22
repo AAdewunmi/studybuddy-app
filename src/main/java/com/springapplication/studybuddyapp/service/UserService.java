@@ -53,7 +53,9 @@ public class UserService {
         u = userRepository.save(u);
 
         Role userRole = roleRepository.findByName("ROLE_USER")
-                .orElseThrow(() -> new NotFoundException("Default role USER not found"));
+                // fallback in case older data has USER without prefix
+                .orElseGet(() -> roleRepository.findByName("USER")
+                        .orElseThrow(() -> new NotFoundException("Default role ROLE_USER not found")));
         userRoleRepository.save(new UserRole(u, userRole));
 
         return u;

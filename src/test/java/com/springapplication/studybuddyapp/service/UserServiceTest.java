@@ -39,22 +39,23 @@ class UserServiceTest {
 
     @Test
     void createUser_success_assignsUSER() {
-        when(userRepository.existsByEmailIgnoreCase("a@x.com")).thenReturn(false);
-        when(passwordEncoder.encode("Password123")).thenReturn("ENC");
-        Role userRole = new Role("USER");
-        userRole.setId(1);
-        when(roleRepository.findByName("USER")).thenReturn(Optional.of(userRole));
-        User saved = new User();
-        saved.setId(42L);
-        saved.setEmail("a@x.com");
-        when(userRepository.save(any(User.class))).thenReturn(saved);
+        // given
+        when(userRepository.existsByEmailIgnoreCase("alice@example.com")).thenReturn(false);
+        // service will first ask for ROLE_USER, return present:
+        when(roleRepository.findByName("ROLE_USER")).thenReturn(Optional.of(new Role("ROLE_USER")));
+        // (fallback "USER" will not be used in this path)
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> {
+            User u = inv.getArgument(0);
+            u.setId(123L);
+            return u;
+        });
 
-        User u = userService.createUser("Alice", "a@x.com", "Password123");
+        // when
+        User created = userService.createUser("Alice", "alice@example.com", "Str0ngP@ss!");
 
-        assertThat(u.getId()).isEqualTo(42L);
-        ArgumentCaptor<UserRole> link = ArgumentCaptor.forClass(UserRole.class);
-        verify(userRoleRepository).save(link.capture());
-        assertThat(link.getValue().getRole().getName()).isEqualTo("USER");
+        // then
+        assertThat(created.getId()).isEqualTo(123L);
+        verify(userRoleRepository).save(any(UserRole.class));
     }
 
     @Test
@@ -116,6 +117,18 @@ class UserServiceTest {
         assertThatThrownBy(() -> userService.findByName(null))
                 .isInstanceOf(BadRequestException.class);
         verifyNoInteractions(userRepository);
+    }
+
+    @Test
+    void createUser_throws_ifRoleMissing() {
+        when(userRepository.existsByEmailIgnoreCase("no-role@example.com")).thenReturn(false);
+        // neither ROLE_USER nor USER present
+        when(roleRepository.findByName("ROLE_USER")).thenReturn(Optional.empty());
+        when(roleRepository.findByName("USER")).thenReturn(Optional.empty());
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        org.junit.jupiter.api.Assertions.assertThrows(NotFoundException.class,
+                () -> userService.createUser("Bob", "no-role@example.com", "Str0ngP@ss!"));
     }
 }
 

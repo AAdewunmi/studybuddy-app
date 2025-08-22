@@ -52,7 +52,7 @@ public class UserService {
         u.setPasswordHash(passwordEncoder.encode(rawPassword));
         u = userRepository.save(u);
 
-        Role userRole = roleRepository.findByName("USER")
+        Role userRole = roleRepository.findByName("ROLE_USER")
                 .orElseThrow(() -> new NotFoundException("Default role USER not found"));
         userRoleRepository.save(new UserRole(u, userRole));
 

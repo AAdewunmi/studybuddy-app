@@ -2,6 +2,8 @@ package com.springapplication.studybuddyapp.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -26,28 +28,37 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
-                                                   DaoAuthenticationProvider daoAuthenticationProvider) throws Exception {
+                                                   AuthenticationManager authenticationManager) throws Exception {
         http
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/auth/**")) // JSON API convenience
+                // CSRF: forms include token; JSON /auth/** may skip CSRF for convenience
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/auth/**", "/logout"))
+
+                // Use our explicit AuthenticationManager (DAO provider + BCrypt)
+                .authenticationManager(authenticationManager)
+
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-                .authenticationProvider(daoAuthenticationProvider)
+
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/login", "/signup",
                                 "/assets/**", "/css/**", "/js/**", "/webjars/**").permitAll()
-                        .requestMatchers("/auth/**").permitAll()          // JSON signup/login still public
+                        // permit POST /login to allow the authentication attempt
+                        .requestMatchers(HttpMethod.POST, "/login").permitAll()
+                        // JSON auth endpoints:
+                        .requestMatchers("/auth/**").permitAll()
+                        // protected UI
                         .requestMatchers("/dashboard", "/groups/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .httpBasic(Customizer.withDefaults())
                 .formLogin(form -> form
                         .loginPage("/login").permitAll()
-                        .loginProcessingUrl("/login")
-                        .usernameParameter("email")                       // form uses email
+                        .loginProcessingUrl("/login")      // filter listens here
+                        .usernameParameter("email")        // <— IMPORTANT: matches your form/tests
                         .passwordParameter("password")
                         .defaultSuccessUrl("/dashboard", true)
                 )
                 .logout(logout -> logout
-                        .logoutUrl("/logout")                             // POST /logout
+                        .logoutUrl("/logout")
                         .logoutSuccessUrl("/login?logout")
                 );
 

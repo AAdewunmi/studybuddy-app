@@ -1,0 +1,19 @@
+<!-- path: src/main/resources/templates/fragments/navbar.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head></head>
+<body>
+<div th:fragment="navbar(title)">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" th:href="@{/dashboard}" th:text="${title}">StudyBuddy</a>
+            <div class="ms-auto">
+                <a class="btn btn-outline-light me-2" th:href="@{/dashboard}">Dashboard</a>
+                <a class="btn btn-outline-light me-2" th:href="@{/groups}">Groups</a>
+                <a class="btn btn-warning" th:href="@{/logout}">Logout</a>
+            </div>
+        </div>
+    </nav>
+</div>
+</body>
+</html>

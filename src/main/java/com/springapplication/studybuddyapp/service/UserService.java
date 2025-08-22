@@ -129,6 +129,22 @@ public class UserService {
                 .map(ur -> ur.getRole().getName())
                 .collect(Collectors.toSet());
     }
+
+    /**
+     * Find a user by their display name ("username") or 404.
+     *
+     * @param name display name to look up (must not be blank)
+     * @return the matching {@link User}
+     * @throws BadRequestException if name is null/blank
+     * @throws NotFoundException if no user with that name exists
+     */
+    public User findByName(String name) {
+        if (name == null || name.isBlank()) {
+            throw new BadRequestException("Name must be provided");
+        }
+        return userRepository.findByName(name)
+                .orElseThrow(() -> new NotFoundException("User not found by name: " + name));
+    }
 }
 
 

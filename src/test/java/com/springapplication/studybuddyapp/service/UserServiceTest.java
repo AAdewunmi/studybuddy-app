@@ -86,5 +86,36 @@ class UserServiceTest {
         assertThatThrownBy(() -> userService.addRole(10L, "ADMIN"))
                 .isInstanceOf(NotFoundException.class);
     }
+
+    @Test
+    void findByName_returnsUser_whenPresent() {
+        User u = new User();
+        u.setId(42L);
+        u.setName("Alice");
+        when(userRepository.findByName("Alice")).thenReturn(Optional.of(u));
+
+        User found = userService.findByName("Alice");
+
+        assertThat(found.getId()).isEqualTo(42L);
+        verify(userRepository).findByName("Alice");
+    }
+
+    @Test
+    void findByName_throwsNotFound_whenAbsent() {
+        when(userRepository.findByName("Bob")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userService.findByName("Bob"))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessageContaining("User not found by name: Bob");
+    }
+
+    @Test
+    void findByName_throwsBadRequest_whenBlank() {
+        assertThatThrownBy(() -> userService.findByName("  "))
+                .isInstanceOf(BadRequestException.class);
+        assertThatThrownBy(() -> userService.findByName(null))
+                .isInstanceOf(BadRequestException.class);
+        verifyNoInteractions(userRepository);
+    }
 }
 

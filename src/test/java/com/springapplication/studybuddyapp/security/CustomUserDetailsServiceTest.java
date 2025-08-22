@@ -9,8 +9,9 @@ import com.springapplication.studybuddyapp.model.User;
 import com.springapplication.studybuddyapp.model.UserRole;
 import com.springapplication.studybuddyapp.repository.UserRepository;
 import java.util.Optional;
+
+import com.springapplication.studybuddyapp.service.CustomUserDetailsService;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 

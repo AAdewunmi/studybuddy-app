@@ -33,6 +33,14 @@ public interface UserRepository extends JpaRepository<User, Long> {
            left join fetch ur.role r
            """)
     List<User> findAllWithRoles();
+
+    @Query("""
+           select u from User u
+           left join fetch u.userRoles ur
+           left join fetch ur.role r
+           where lower(u.email) = lower(:email)
+           """)
+    Optional<User> findByEmailIgnoreCaseWithRoles(@Param("email") String email);
 }
 
 

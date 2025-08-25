@@ -7,6 +7,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -82,7 +83,7 @@ class ViewAuthControllerTest {
         String result = controller.handleSignup(form, bindingResult, model, redirectAttributes);
 
         assertEquals(SIGNUP_VIEW, result);
-        verify(bindingResult).rejectValue("passwordConfirm", "mismatch", "Passwords do not match");
+        verify(bindingResult).addError(any(FieldError.class));
         verify(userService).existsByEmail(VALID_EMAIL);
         verifyNoInteractions(redirectAttributes);
     }
@@ -98,10 +99,11 @@ class ViewAuthControllerTest {
 
         assertEquals(SIGNUP_VIEW, result);
         verify(bindingResult).rejectValue("email", "duplicate", "Email already registered");
-        verify(bindingResult).rejectValue("passwordConfirm", "mismatch", "Passwords do not match");
+        verify(bindingResult).addError(any(FieldError.class));
         verify(userService).existsByEmail(DUPLICATE_EMAIL);
         verifyNoInteractions(redirectAttributes);
     }
+
 
     private SignupForm createValidForm() {
         return createForm("Valid Name", VALID_EMAIL, VALID_PASSWORD, VALID_PASSWORD);

@@ -32,9 +32,9 @@ public class ViewAuthController {
     }
 
     @GetMapping("/signup")
-    public String signupPage(Model model) {
+    public String legacySignupRedirect(Model model) {
         model.addAttribute("signupForm", new SignupForm());
-        return "signup";
+        return "redirect:/signup";
     }
 
     @PostMapping("/signup")

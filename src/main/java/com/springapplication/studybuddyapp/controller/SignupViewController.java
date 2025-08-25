@@ -25,7 +25,7 @@ public class SignupViewController {
         return "signup";
     }
 
-    @PostMapping(path = "/signup", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    @PostMapping(path = "/signup")
     public String submit(@Valid @ModelAttribute("signupForm") SignupForm form,
                          BindingResult bindingResult,
                          Model model,

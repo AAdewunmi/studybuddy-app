@@ -1,3 +1,5 @@
+package com.springapplication.studybuddyapp.controller;
+
 import com.springapplication.studybuddyapp.controller.SignupForm;
 import com.springapplication.studybuddyapp.controller.SignupViewController;
 import org.junit.jupiter.api.BeforeEach;

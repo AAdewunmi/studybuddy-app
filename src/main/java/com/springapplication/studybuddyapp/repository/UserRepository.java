@@ -1,6 +1,8 @@
 // path: src/main/java/com/springapplication/studybuddyapp/repository/UserRepository.java
 package com.springapplication.studybuddyapp.repository;
 
+import com.springapplication.studybuddyapp.api.dto.SignupForm;
+import com.springapplication.studybuddyapp.exception.DuplicateEmailException;
 import com.springapplication.studybuddyapp.model.User;
 import java.util.List;
 import java.util.Optional;
@@ -41,6 +43,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
            where lower(u.email) = lower(:email)
            """)
     Optional<User> findByEmailIgnoreCaseWithRoles(@Param("email") String email);
+
+    boolean existsByEmail(String email);
+
 }
 
 

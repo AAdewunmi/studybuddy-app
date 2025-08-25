@@ -173,6 +173,7 @@ public class UserService {
         return userRepository.findByName(name)
                 .orElseThrow(() -> new NotFoundException("User not found by name: " + name));
     }
+
 }
 
 

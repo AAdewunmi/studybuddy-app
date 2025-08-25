@@ -33,8 +33,8 @@ Built using **Spring Boot**, **Thymeleaf**, and **PostgreSQL**, the app demonstr
 | Database     | PostgreSQL                              |
 | Deployment   | Render / Railway (planned)              |
 | Testing      | JUnit, Mockito                          |
-| Tools        | Docker, Docker Compose                  
-| Documentation| Google Docs, Google Sheets                            |
+| Tools        | Docker, Docker Compose                  |
+| Documentation| Google Docs, Google Sheets              |
 | CI/CD        | GitHub Actions                          |
 | Version Control | GitHub                               |
 |-----------------|--------------------------------------|
@@ -116,7 +116,7 @@ studybuddy/
 ## 🧠 Documentation & Planning
 
 * [x] Week 0 – Project Setup & ERD
-* [ ] Week 1 – Auth + User Roles
+* [x] Week 1 – Auth + User Roles
 * [ ] Week 2 – Study Groups
 * [ ] Week 3 – Habit Tracker
 * [ ] Week 4 – Shared Calendar
@@ -127,24 +127,13 @@ studybuddy/
 
 ## 📸 Screenshots 
 
-### - Command Line (Docker Compose + PostgreSQL database)
-  
+### - Login 
 
-<img width="831" height="1037" alt="Image" src="https://github.com/user-attachments/assets/7719e677-855a-4be7-86c3-2deceb9ec08e" />
+![Login](screenshots/login-screenshot.png)
 
+### - Signup
 
-### - pgAdmin (GUI to view PostgreSQL database)
-  
-
-<img width="1897" height="849" alt="Image" src="https://github.com/user-attachments/assets/c46e4c69-5723-4bb3-840f-08f20ea4a0dd" />
-
-
-
-### - GitHub Actions Workflow with DB Connectivity Test
-
-
-<img width="1047" height="559" alt="Image" src="https://github.com/user-attachments/assets/423417f1-b5c9-4ab7-b656-8400acd7b3b5" />
-
+![Signup](screenshots/signup-screenshot.png)
 
 
 *Will add UI screenshots or wireframes as the app evolves.*

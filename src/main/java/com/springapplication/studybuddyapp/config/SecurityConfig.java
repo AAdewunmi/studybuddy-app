@@ -11,6 +11,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 /**
  * Session-based security:
@@ -31,7 +32,9 @@ public class SecurityConfig {
                                                    AuthenticationManager authenticationManager) throws Exception {
         http
                 // CSRF: forms include token; JSON /auth/** may skip CSRF for convenience
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/auth/**", "/logout"))
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/auth/**", "/logout")
+                        .ignoringRequestMatchers(new AntPathRequestMatcher("/signup", "POST"))
+                    )
 
                 // Use our explicit AuthenticationManager (DAO provider + BCrypt)
                 .authenticationManager(authenticationManager)

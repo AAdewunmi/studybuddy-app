@@ -61,6 +61,32 @@ public class UserService {
         return u;
     }
 
+    /**
+     * Registers a new user after normalizing input.
+     * <p>
+     * This method:
+     * <ul>
+     *   <li>Trims leading/trailing whitespace from {@code email}</li>
+     *   <li>Lowercases {@code email}</li>
+     *   <li>Delegates to {@link #createUser(String, String, String)} for all
+     *       validations (password length), uniqueness checks, persistence,
+     *       and default role assignment</li>
+     * </ul>
+     * Behavior is otherwise identical to {@code createUser}.
+     *
+     * @param name        display name to store
+     * @param email       email to normalize, check for uniqueness and persist
+     * @param rawPassword raw password (must be at least 8 chars; checked in {@code createUser})
+     * @return the persisted {@link User}
+     * @throws ConflictException   if email already exists (case-insensitive)
+     * @throws BadRequestException if password is too short
+     * @throws NotFoundException   if default role cannot be found
+     */
+    public User register(String name, String email, String rawPassword) {
+        String normalizedEmail = (email == null) ? null : email.trim().toLowerCase();
+        return createUser(name, normalizedEmail, rawPassword);
+    }
+
     /** Get by id or 404. */
     public User getUser(Long id) {
         return userRepository.findById(id)

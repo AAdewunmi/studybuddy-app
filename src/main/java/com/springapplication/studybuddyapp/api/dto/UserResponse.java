@@ -16,6 +16,10 @@ public class UserResponse {
         this.id = id; this.name = name; this.email = email; this.roles = roles; this.createdAt = createdAt;
     }
 
+    public UserResponse(Long id, String name, String email, Set<String> roles) {
+        this.id = id; this.name = name; this.email = email; this.roles = roles; this.createdAt = createdAt;
+    }
+
     // getters
     public Long getId() { return id; }
     public String getName() { return name; }

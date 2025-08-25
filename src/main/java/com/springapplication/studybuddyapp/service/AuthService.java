@@ -68,7 +68,7 @@ public class AuthService {
         // Persist link
         userRoles.save(new UserRole(u, defaultRole));
 
-        // ✅ Build response directly from what we assigned (no reload)
+        // Build response directly from what we assigned (no reload)
         java.util.Set<String> roleNames = java.util.Set.of(defaultRole.getName());
         return new UserResponse(u.getId(), u.getName(), u.getEmail(), roleNames, u.getCreatedAt());
     }

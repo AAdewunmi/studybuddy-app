@@ -20,6 +20,11 @@ public class ViewAuthController {
         this.userService = userService;
     }
 
+    @GetMapping("/login")
+    public String login() {
+        return "login"; // will resolve to login.html in templates/
+    }
+
     @GetMapping("/signup")
     public String showSignupForm(Model model) {
         if (!model.containsAttribute("signupForm")) {
@@ -47,7 +52,7 @@ public class ViewAuthController {
         }
 
         if (bindingResult.hasErrors()) {
-            return "auth/signup";
+            return "signup";
         }
 
         // TODO: perform actual registration using your existing service

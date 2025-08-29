@@ -32,11 +32,7 @@ public class AuthProvidersConfig {
         return p;
     }
 
-    /** Exposes AuthenticationManager for login endpoints if you need it. */
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
-    }
+
 }
 
 

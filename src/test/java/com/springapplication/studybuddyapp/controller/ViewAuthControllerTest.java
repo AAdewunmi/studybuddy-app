@@ -24,7 +24,7 @@ class ViewAuthControllerTest {
     private static final String DUPLICATE_EMAIL = "duplicate@example.com";
     private static final String VALID_PASSWORD = "ValidPass123!";
     private static final String DIFFERENT_PASSWORD = "DifferentPass123!";
-    private static final String SIGNUP_VIEW = "auth/signup";
+    private static final String SIGNUP_VIEW = "signup";
     private static final String LOGIN_REDIRECT = "redirect:/login?registered";
 
     @Mock

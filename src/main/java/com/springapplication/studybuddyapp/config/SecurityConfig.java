@@ -6,6 +6,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -21,48 +22,46 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
  * - Form login uses "email" as username parameter.
  * - Logout redirects to "/login?logout" (Thymeleaf-friendly).
  */
+// ...imports...
 @Configuration
 public class SecurityConfig {
-
     @Bean
     public PasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(); }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    AuthenticationManager authenticationManager) throws Exception {
         http
-                // CSRF: forms include token; JSON /auth/** may skip CSRF for convenience
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/auth/**", "/logout")
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/auth/**")
                         .ignoringRequestMatchers(new AntPathRequestMatcher("/signup", "POST"))
-                    )
-
-                // Use our explicit AuthenticationManager (DAO provider + BCrypt)
+                )
                 .authenticationManager(authenticationManager)
-
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/login", "/signup",
-                                "/assets/**", "/css/**", "/js/**", "/webjars/**").permitAll()
-                        // permit POST /login to allow the authentication attempt
+                        .requestMatchers("/", "/login", "/signup", "/assets/**", "/css/**", "/js/**", "/webjars/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/login").permitAll()
-                        // JSON auth endpoints:
                         .requestMatchers("/auth/**").permitAll()
-                        // protected UI
                         .requestMatchers("/dashboard", "/groups/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .httpBasic(Customizer.withDefaults())
                 .formLogin(form -> form
                         .loginPage("/login").permitAll()
-                        .loginProcessingUrl("/login")      // filter listens here
-                        .usernameParameter("email")        // <— IMPORTANT: matches your form/tests
+                        .loginProcessingUrl("/login")
+                        .usernameParameter("email")
                         .passwordParameter("password")
                         .defaultSuccessUrl("/dashboard", true)
                 )
                 .logout(logout -> logout
                         .logoutUrl("/logout")
                         .logoutSuccessUrl("/login?logout")
+                        .permitAll()
                 );
 
         return http.build();

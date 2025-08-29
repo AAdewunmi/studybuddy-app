@@ -1,4 +1,3 @@
-// path: src/main/java/com/springapplication/studybuddyapp/api/AuthController.java
 package com.springapplication.studybuddyapp.controller;
 
 import com.springapplication.studybuddyapp.api.dto.LoginRequest;
@@ -9,6 +8,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -16,7 +17,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -28,14 +28,12 @@ public class AuthController {
 
     private final AuthService authService;
     private final AuthenticationManager authenticationManager;
-    private final SecurityContextRepository securityContextRepository;
 
+    @Autowired
     public AuthController(AuthService authService,
-                          AuthenticationManager authenticationManager,
-                          SecurityContextRepository securityContextRepository) {
+                          AuthenticationManager authenticationManager) {
         this.authService = authService;
         this.authenticationManager = authenticationManager;
-        this.securityContextRepository = securityContextRepository;
     }
 
     /** POST /auth/signup – create user, hash password, default role. */
@@ -60,7 +58,6 @@ public class AuthController {
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(authentication);
         SecurityContextHolder.setContext(context);
-        securityContextRepository.saveContext(context, request, response);
 
         return ResponseEntity.ok(Map.of("message", "Login successful"));
     }

@@ -1,69 +1,93 @@
-// path: src/test/java/com/springapplication/studybuddyapp/config/SecurityConfigWebTest.java
+// src/test/java/com/springapplication/studybuddyapp/config/SecurityConfigWebTest.java
 package com.springapplication.studybuddyapp.config;
 
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Bean;
+import org.springframework.mock.web.MockHttpSession;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithAnonymousUser;
-import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
-
-/**
- * Verifies HTTP security behavior at the web layer only:
- * - GET /dashboard redirects unauthenticated to login (302)
- * - POST /dashboard without CSRF → 403
- * - POST /dashboard with CSRF → 302 to login (still unauthenticated)
- */
-@WebMvcTest(controllers = SecurityConfigWebTest.DashboardStub.class)
-@Import(TestSecurityConfig.class)              // use our minimal rules
-@AutoConfigureMockMvc(addFilters = true)       // include Spring Security filter chain
-class SecurityConfigWebTest {
+@SpringBootTest
+@AutoConfigureMockMvc
+public class SecurityConfigWebTest {
 
     @Autowired
-    MockMvc mvc;
+    private MockMvc mockMvc;
 
-    // Minimal controller just for attaching rules to real endpoints
-    @RestController
-    static class DashboardStub {
-        @GetMapping("/dashboard")
-        public String getDash() { return "ok"; }
 
-        @PostMapping(value = "/dashboard", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-        public String postDash() { return "posted"; }
+    public UserDetailsService userDetailsService(PasswordEncoder encoder) {
+        UserDetails user = User.withUsername("user@example.com")
+                .password(encoder.encode("password"))
+                .roles("USER")
+                .build();
+        return new InMemoryUserDetailsManager(user);
     }
 
     @Test
-    @WithAnonymousUser
-    void dashboard_requiresAuth_redirectsToLogin() throws Exception {
-        mvc.perform(get("/dashboard"))
-                .andExpect(status().isFound()) // 302
-                .andExpect(header().string("Location", org.hamcrest.Matchers.containsString("/login")));
+    void permitAll_endpoints_accessible() throws Exception {
+        mockMvc.perform(get("/"))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/login"))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/signup"))
+                .andExpect(status().isOk());
     }
 
     @Test
-    @WithAnonymousUser
-    void dashboard_post_withoutCsrf_forbidden() throws Exception {
-        mvc.perform(post("/dashboard").contentType(MediaType.APPLICATION_FORM_URLENCODED))
-                .andExpect(status().isForbidden()); // 403 due to missing CSRF token
+    void dashboard_requiresAuthentication() throws Exception {
+        mockMvc.perform(get("/dashboard")
+                        .header("Accept", "text/html")) // Treat as browser request
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrlPattern("**/login"));
+    }
+
+
+    @Test
+    @WithMockUser
+    void dashboard_authenticated_accessible() throws Exception {
+        mockMvc.perform(get("/dashboard"))
+                .andExpect(status().isOk());
     }
 
     @Test
-    @WithAnonymousUser
-    void dashboard_post_withCsrf_redirectsToLogin() throws Exception {
-        mvc.perform(post("/dashboard")
-                        .with(SecurityMockMvcRequestPostProcessors.csrf())
-                        .contentType(MediaType.APPLICATION_FORM_URLENCODED))
-                .andExpect(status().isFound()) // 302 (still unauthenticated)
-                .andExpect(header().string("Location", org.hamcrest.Matchers.containsString("/login")));
+    void logout_withoutCsrf_forbidden() throws Exception {
+        mockMvc.perform(post("/logout"))
+                .andExpect(status().isForbidden());
     }
+
+    @Test
+    void logout_withCsrf_successful() throws Exception {
+        MockHttpSession session = (MockHttpSession) mockMvc.perform(post("/login")
+                        .param("email", "user@example.com")
+                        .param("password", "password")
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andReturn()
+                .getRequest()
+                .getSession();
+
+        mockMvc.perform(post("/logout")
+                        .with(csrf())
+                        .session(session)
+                        .header("Accept", "text/html")) // <--- This line is key!
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/login?logout"));
+    }
+
 }
+
 
 
 

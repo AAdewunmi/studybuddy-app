@@ -8,7 +8,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
  * Repository for {@link Role}.
  */
 public interface RoleRepository extends JpaRepository<Role, Integer> {
+
     Optional<Role> findByName(String name);
     boolean existsByName(String name);
+
 }
 

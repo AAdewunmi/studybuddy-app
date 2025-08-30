@@ -15,6 +15,9 @@ import jakarta.transaction.Transactional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -30,8 +33,11 @@ public class AuthService {
     );
 
     private final UserRepository users;
+
     private final RoleRepository roles;
+
     private final UserRoleRepository userRoles;
+
     private final PasswordEncoder encoder;
 
     public AuthService(UserRepository users, RoleRepository roles, UserRoleRepository userRoles, PasswordEncoder encoder) {
@@ -65,9 +71,9 @@ public class AuthService {
                 .orElseGet(() -> roles.findByName("USER")
                         .orElseThrow(() -> new NotFoundException("Default role ROLE_USER/USER not found")));
 
-        // Persist link
-        userRoles.save(new UserRole(u, defaultRole));
-
+        // Link user with the default role
+        UserRole userRole = new UserRole(u, defaultRole);
+        userRoles.save(userRole);
         // Build response directly from what we assigned (no reload)
         java.util.Set<String> roleNames = java.util.Set.of(defaultRole.getName());
         return new UserResponse(u.getId(), u.getName(), u.getEmail(), roleNames, u.getCreatedAt());

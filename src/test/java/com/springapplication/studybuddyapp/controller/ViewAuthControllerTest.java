@@ -1,124 +1,128 @@
 package com.springapplication.studybuddyapp.controller;
+
 import com.springapplication.studybuddyapp.service.UserServiceInterface;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-/**
- * Unit tests for ViewAuthController focusing on business logic without Spring context.
- * This approach avoids template resolution issues and provides fast, isolated testing.
- */
-@ExtendWith(MockitoExtension.class)
-class ViewAuthControllerTest {
+@SpringBootTest
+@AutoConfigureMockMvc
+public class ViewAuthControllerTest {
 
-    private static final String VALID_EMAIL = "valid@example.com";
-    private static final String DUPLICATE_EMAIL = "duplicate@example.com";
-    private static final String VALID_PASSWORD = "ValidPass123!";
-    private static final String DIFFERENT_PASSWORD = "DifferentPass123!";
-    private static final String SIGNUP_VIEW = "signup";
-    private static final String LOGIN_REDIRECT = "redirect:/login?registered";
+    @Autowired
+    private MockMvc mockMvc;
 
-    @Mock
+    @MockBean
     private UserServiceInterface userService;
 
-    @Mock
-    private BindingResult bindingResult;
+    @InjectMocks
+    private ViewAuthController viewAuthController;
 
-    @Mock
-    private Model model;
-
-    @Mock
-    private RedirectAttributes redirectAttributes;
-
-    private ViewAuthController controller;
 
     @BeforeEach
-    void setUp() {
-        controller = new ViewAuthController(userService);
+    public void setUp() {
+        reset(userService);
     }
 
     @Test
-    void handleSignup_WithValidForm_ShouldRedirectToLogin() {
-        SignupForm form = createValidForm();
-        when(userService.existsByEmail(VALID_EMAIL)).thenReturn(false);
-        when(bindingResult.hasErrors()).thenReturn(false);
-
-        String result = controller.handleSignup(form, bindingResult, model, redirectAttributes);
-
-        assertEquals(LOGIN_REDIRECT, result);
-        verify(redirectAttributes).addFlashAttribute("signupSuccess", true);
-        verify(userService).existsByEmail(VALID_EMAIL);
-        verifyNoInteractions(model);
+    void shouldReturnLoginPage() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/login"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("login"));
     }
 
     @Test
-    void handleSignup_WithDuplicateEmail_ShouldReturnSignupView() {
-        SignupForm form = createValidForm();
-        when(userService.existsByEmail(VALID_EMAIL)).thenReturn(true);
-        when(bindingResult.hasErrors()).thenReturn(true);
-
-        String result = controller.handleSignup(form, bindingResult, model, redirectAttributes);
-
-        assertEquals(SIGNUP_VIEW, result);
-        verify(bindingResult).rejectValue("email", "duplicate", "Email already registered");
-        verify(userService).existsByEmail(VALID_EMAIL);
-        verifyNoInteractions(redirectAttributes);
+    void shouldReturnSignupPageWithEmptyForm() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/signup"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("signup"))
+                .andExpect(model().attributeExists("signupForm"));
     }
 
     @Test
-    void handleSignup_WithMismatchedPasswords_ShouldReturnSignupView() {
-        SignupForm form = createFormWithMismatchedPasswords();
-        when(userService.existsByEmail(VALID_EMAIL)).thenReturn(false);
-        when(bindingResult.hasErrors()).thenReturn(true);
+    void shouldRedirectToLoginWhenSignupIsSuccessful() throws Exception {
+        // Given
+        String name = "John Doe";
+        String email = "john@example.com";
+        String password = "Password123!";
+        String passwordConfirm = "Password123!";
 
-        String result = controller.handleSignup(form, bindingResult, model, redirectAttributes);
+        // When
+        MvcResult result = mockMvc.perform(MockMvcRequestBuilders.post("/signup")
+                        .param("name", name)
+                        .param("email", email)
+                        .param("password", password)
+                        .param("passwordConfirm", passwordConfirm)
+                        .with(csrf()))  // Add CSRF token here
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/login?registered"))
+                .andReturn();
 
-        assertEquals(SIGNUP_VIEW, result);
-        verify(bindingResult).addError(any(FieldError.class));
-        verify(userService).existsByEmail(VALID_EMAIL);
-        verifyNoInteractions(redirectAttributes);
+        // Then
+        verify(userService, times(1)).register(name, email, password);
     }
+
 
     @Test
-    void handleSignup_WithBothEmailAndPasswordErrors_ShouldReturnSignupView() {
-        SignupForm form = createFormWithMismatchedPasswords();
-        form.setEmail(DUPLICATE_EMAIL);
-        when(userService.existsByEmail(DUPLICATE_EMAIL)).thenReturn(true);
-        when(bindingResult.hasErrors()).thenReturn(true);
+    void shouldRedirectToSignupWithMismatchErrorWhenPasswordsDoNotMatch() throws Exception {
+        // Given
+        String name = "John Doe";
+        String email = "john@example.com";
+        String password = "Password123!";
+        String passwordConfirm = "Password124!"; // Mismatch
 
-        String result = controller.handleSignup(form, bindingResult, model, redirectAttributes);
-
-        assertEquals(SIGNUP_VIEW, result);
-        verify(bindingResult).rejectValue("email", "duplicate", "Email already registered");
-        verify(bindingResult).addError(any(FieldError.class));
-        verify(userService).existsByEmail(DUPLICATE_EMAIL);
-        verifyNoInteractions(redirectAttributes);
+        // When
+        mockMvc.perform(MockMvcRequestBuilders.post("/signup")
+                        .param("name", name)
+                        .param("email", email)
+                        .param("password", password)
+                        .param("passwordConfirm", passwordConfirm)
+                        .with(csrf()))  // Add CSRF token here
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/signup?mismatch"))  // Corrected the expected redirect URL
+                .andReturn();
     }
 
 
-    private SignupForm createValidForm() {
-        return createForm("Valid Name", VALID_EMAIL, VALID_PASSWORD, VALID_PASSWORD);
+    @Test
+    void shouldHandleValidationErrorsForSignup() throws Exception {
+        // When invalid email is provided
+        mockMvc.perform(MockMvcRequestBuilders.post("/signup")
+                        .param("name", "John Doe")
+                        .param("email", "invalid-email") // Invalid email
+                        .param("password", "Password123!")
+                        .param("passwordConfirm", "Password123!")
+                        .with(csrf()))  // Add CSRF token here
+                .andExpect(status().isOk()) // Expect a 200 OK status
+                .andExpect(view().name("signup"))
+                .andExpect(model().attributeHasFieldErrors("signupForm", "email"));
+
+        // When blank name is provided
+        mockMvc.perform(MockMvcRequestBuilders.post("/signup")
+                        .param("name", "") // Blank name
+                        .param("email", "john@example.com")
+                        .param("password", "Password123!")
+                        .param("passwordConfirm", "Password123!")
+                        .with(csrf()))  // Add CSRF token here
+                .andExpect(status().isOk()) // Expect a 200 OK status
+                .andExpect(view().name("signup"))
+                .andExpect(model().attributeHasFieldErrors("signupForm", "name"));
     }
 
-    private SignupForm createFormWithMismatchedPasswords() {
-        return createForm("Valid Name", VALID_EMAIL, VALID_PASSWORD, DIFFERENT_PASSWORD);
-    }
 
-    private SignupForm createForm(String name, String email, String password, String passwordConfirm) {
-        SignupForm form = new SignupForm();
-        form.setName(name);
-        form.setEmail(email);
-        form.setPassword(password);
-        form.setPasswordConfirm(passwordConfirm);
-        return form;
-    }
 }

@@ -1,5 +1,6 @@
 package com.springapplication.studybuddyapp.config;
 
+import com.springapplication.studybuddyapp.repository.UserServiceImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -25,6 +26,7 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 // ...imports...
 @Configuration
 public class SecurityConfig {
+
     @Bean
     public PasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(); }
 
@@ -37,33 +39,23 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    AuthenticationManager authenticationManager) throws Exception {
         http
-                .csrf(csrf -> csrf
-                        .ignoringRequestMatchers("/auth/**")
-                        .ignoringRequestMatchers(new AntPathRequestMatcher("/signup", "POST"))
-                )
-                .authenticationManager(authenticationManager)
-                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                .csrf(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/login", "/signup", "/assets/**", "/css/**", "/js/**", "/webjars/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/login").permitAll()
-                        .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/dashboard", "/groups/**").authenticated()
+                        .requestMatchers("/", "/signup", "/login", "/css/**", "/js/**").permitAll()
                         .anyRequest().authenticated()
                 )
-                .httpBasic(Customizer.withDefaults())
                 .formLogin(form -> form
                         .loginPage("/login").permitAll()
                         .loginProcessingUrl("/login")
                         .usernameParameter("email")
                         .passwordParameter("password")
                         .defaultSuccessUrl("/dashboard", true)
+                        .failureUrl("/login?error")
                 )
                 .logout(logout -> logout
                         .logoutUrl("/logout")
                         .logoutSuccessUrl("/login?logout")
-                        .permitAll()
                 );
-
         return http.build();
     }
 }

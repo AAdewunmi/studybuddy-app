@@ -1,5 +1,6 @@
 package com.springapplication.studybuddyapp.ui;
 
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -27,11 +28,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-/**
- * End-to-end UI flows:
- * 1) Admin logs in, visits dashboard and groups, logs out.
- * 2) Member signs up (web), logs in, visits dashboard and groups, logs out.
- */
 @Testcontainers
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -57,10 +53,7 @@ class UiFlowsIT {
     private void ensureAdminUser() {
         var email = "admin@test.com";
         User u = users.findByEmailIgnoreCase(email).orElseGet(() -> {
-            User nu = new User();
-            nu.setName("Admin");
-            nu.setEmail(email);
-            nu.setPasswordHash(encoder.encode("AdminP@ss1"));
+            User nu = new User("Admin", email, encoder.encode("AdminP@ss1"));
             return users.save(nu);
         });
         var adminRole = roles.findByName("ROLE_ADMIN").orElseThrow();
@@ -77,48 +70,35 @@ class UiFlowsIT {
     void admin_can_login_view_dashboard_groups_logout() throws Exception {
         ensureAdminUser();
 
-        // Login form (email/password)
         MvcResult login = mvc.perform(post("/login")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                         .param("email", "admin@test.com")
                         .param("password", "AdminP@ss1"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/dashboard"))
                 .andReturn();
 
         MockHttpSession session = (MockHttpSession) login.getRequest().getSession(false);
         assertThat(session).isNotNull();
 
-        // Dashboard accessible
         mvc.perform(get("/dashboard").session(session))
                 .andExpect(status().isOk())
-                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
-                        .string(org.hamcrest.Matchers.containsString("Dashboard")));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Dashboard")));
 
-        // Groups accessible
         mvc.perform(get("/groups").session(session))
                 .andExpect(status().isOk())
-                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
-                        .string(org.hamcrest.Matchers.containsString("Your Groups")));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Your Groups")));
 
-        // Logout via POST (include CSRF)
-        MvcResult logout = mvc.perform(post("/logout")
-                        .with(csrf())
-                        .session(session))
-                .andReturn();
-
-        int code = logout.getResponse().getStatus();
-        // default is 302 -> /login?logout
-        assertThat(code >= 200 && code < 400).isTrue();
+        mvc.perform(post("/logout").with(csrf()).session(session))
+                .andExpect(status().is3xxRedirection());
     }
-
 
     @Test
     void member_signup_then_login_view_dashboard_groups_logout() throws Exception {
-        // 1) GET signup
         mvc.perform(get("/signup"))
                 .andExpect(status().isOk());
 
-        // 2) POST signup (form)
         mvc.perform(post("/signup")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
@@ -129,7 +109,6 @@ class UiFlowsIT {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrlPattern("/login*"));
 
-        // 3) POST login (form) and CAPTURE SESSION (do not assume Set-Cookie exists)
         MvcResult login = mvc.perform(post("/login")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
@@ -142,7 +121,6 @@ class UiFlowsIT {
         MockHttpSession session = (MockHttpSession) login.getRequest().getSession(false);
         assertThat(session).as("session from login").isNotNull();
 
-        // 4) Authenticated GETs using the session
         mvc.perform(get("/dashboard").session(session))
                 .andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Dashboard")));
@@ -151,12 +129,7 @@ class UiFlowsIT {
                 .andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Your Groups")));
 
-        // 5) Logout (POST with CSRF) using the session
-        MvcResult logout = mvc.perform(post("/logout").with(csrf()).session(session))
-                .andReturn();
-        int status = logout.getResponse().getStatus();
-        assertThat(status >= 200 && status < 400).isTrue();
+        mvc.perform(post("/logout").with(csrf()).session(session))
+                .andExpect(status().is3xxRedirection());
     }
-
 }
-

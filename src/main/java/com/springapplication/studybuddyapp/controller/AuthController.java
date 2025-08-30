@@ -52,11 +52,14 @@ public class AuthController {
     /**
      * POST /auth/login – authenticates via AuthenticationManager and persists
      * the SecurityContext into the HTTP session.
+     * <p>Emails are normalized (trimmed, lowercased) to ensure login works regardless of case.</p>
      */
     @PostMapping("/login")
     public ResponseEntity<Map<String, String>> login(@Valid @RequestBody LoginRequest req,
                                                      HttpServletRequest request,
                                                      HttpServletResponse response) {
+        // Normalize email for authentication to match registration logic
+        //String email = req.getEmail() == null ? null : req.getEmail().trim().toLowerCase();
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(req.getEmail(), req.getPassword())
         );

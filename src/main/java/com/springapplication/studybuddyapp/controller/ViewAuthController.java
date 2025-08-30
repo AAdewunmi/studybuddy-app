@@ -2,13 +2,15 @@ package com.springapplication.studybuddyapp.controller;
 
 import com.springapplication.studybuddyapp.service.UserServiceInterface;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
@@ -33,32 +35,23 @@ public class ViewAuthController {
         return "signup";
     }
 
-    @PostMapping("/signup")
-    public String handleSignup(@Valid @ModelAttribute("signupForm") SignupForm form,
+    @PostMapping(path = "/signup")
+    public String handleSignup(@ModelAttribute @Valid SignupForm signupForm,
                                BindingResult bindingResult,
-                               Model model,
-                               RedirectAttributes redirectAttributes) {
-
-        // Check for duplicate email
-        if (userService.existsByEmail(form.getEmail())) {
-            bindingResult.rejectValue("email", "duplicate", "Email already registered");
-        }
-
-        // Cross-field password validation
-        if (form.getPassword() != null && form.getPasswordConfirm() != null
-                && !form.getPassword().equals(form.getPasswordConfirm())) {
-            bindingResult.addError(new FieldError(
-                    "signupForm", "passwordConfirm", "Passwords do not match"));
-        }
-
+                               RedirectAttributes ra) {
         if (bindingResult.hasErrors()) {
+            // Return the user to the signup form with validation errors
             return "signup";
         }
 
-        // TODO: perform actual registration using your existing service
-        // e.g. userService.register(form);
+        String password = signupForm.getPassword();
+        String passwordConfirm = signupForm.getPasswordConfirm();
+        if (!password.equals(passwordConfirm)) {
+            return "redirect:/signup?mismatch";
+        }
 
-        redirectAttributes.addFlashAttribute("signupSuccess", true);
+        userService.register(signupForm.getName(), signupForm.getEmail(), password);
+        ra.addFlashAttribute("signupSuccess", true);
         return "redirect:/login?registered";
     }
 }

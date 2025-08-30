@@ -1,16 +1,12 @@
 package com.springapplication.studybuddyapp.controller;
 
 import com.springapplication.studybuddyapp.service.UserServiceInterface;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
@@ -35,23 +31,22 @@ public class ViewAuthController {
         return "signup";
     }
 
-    @PostMapping(path = "/signup")
-    public String handleSignup(@ModelAttribute @Valid SignupForm signupForm,
-                               BindingResult bindingResult,
-                               RedirectAttributes ra) {
+    @PostMapping("/signup")
+    public String handleSignup(@ModelAttribute SignupForm signupForm, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
+        // Validate form
         if (bindingResult.hasErrors()) {
-            // Return the user to the signup form with validation errors
+            return "signup";  // Stay on the signup page if there are validation errors
+        }
+
+        try {
+            userService.register(signupForm.getName(), signupForm.getEmail(), signupForm.getPassword());
+            redirectAttributes.addFlashAttribute("message", "Signup successful!");
+            System.out.println("Redirecting to /login");
+            return "redirect:/login";  // Ensure redirection to /login
+        } catch (Exception e) {
+            System.out.println("Error during registration: " + e.getMessage());
+            bindingResult.reject("signupError", e.getMessage());
             return "signup";
         }
-
-        String password = signupForm.getPassword();
-        String passwordConfirm = signupForm.getPasswordConfirm();
-        if (!password.equals(passwordConfirm)) {
-            return "redirect:/signup?mismatch";
-        }
-
-        userService.register(signupForm.getName(), signupForm.getEmail(), password);
-        ra.addFlashAttribute("signupSuccess", true);
-        return "redirect:/login?registered";
     }
 }

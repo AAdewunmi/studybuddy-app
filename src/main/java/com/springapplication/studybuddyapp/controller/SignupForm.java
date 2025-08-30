@@ -17,10 +17,6 @@ public class SignupForm {
 
     @NotBlank(message = "Password is required")
     @Size(min = 8, message = "Password must be at least 8 characters")
-    @Pattern(
-            regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,64}$",
-            message = "Password must include upper, lower, number and special character"
-    )
     private String password;
 
     @NotBlank(message = "Please confirm your password")

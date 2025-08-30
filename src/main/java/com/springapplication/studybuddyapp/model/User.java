@@ -76,6 +76,27 @@ public class User {
     )
     private Set<UserRole> userRoles = new HashSet<>();
 
+    // -------------------- Constructors --------------------
+    public User() {}
+    public User(String name, String email, String passwordHash) {
+        this.name = name;
+        this.email = email;
+        this.passwordHash = passwordHash;
+    }
+    public User(String name, String email, String passwordHash, LocalDateTime createdAt) {
+        this.name = name;
+        this.email = email;
+    }
+    public User(String name, String email, String passwordHash, LocalDateTime createdAt, Set<UserRole> userRoles) {
+        this.name = name;
+        this.email = email;
+        this.passwordHash = passwordHash;
+        this.createdAt = createdAt;
+        this.userRoles = userRoles;
+    }
+
+
+
     // -------------------- Role accessors --------------------
 
     /**

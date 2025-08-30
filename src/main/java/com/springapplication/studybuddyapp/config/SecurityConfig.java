@@ -51,10 +51,12 @@ public class SecurityConfig {
                         .passwordParameter("password")
                         .defaultSuccessUrl("/dashboard", true)
                         .failureUrl("/login?error")
+                        .permitAll()
                 )
                 .logout(logout -> logout
                         .logoutUrl("/logout")
                         .logoutSuccessUrl("/login?logout")
+                        .permitAll()
                 );
         return http.build();
     }

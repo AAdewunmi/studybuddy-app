@@ -1,6 +1,7 @@
 package com.springapplication.studybuddyapp.controller;
 
 import com.springapplication.studybuddyapp.service.UserServiceInterface;
+import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -32,7 +33,7 @@ public class ViewAuthController {
     }
 
     @PostMapping("/signup")
-    public String handleSignup(@ModelAttribute SignupForm signupForm, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
+    public String handleSignup(@Valid @ModelAttribute SignupForm signupForm, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
         // Validate form
         if (bindingResult.hasErrors()) {
             return "signup";  // Stay on the signup page if there are validation errors

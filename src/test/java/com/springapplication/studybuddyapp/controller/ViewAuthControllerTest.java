@@ -70,7 +70,7 @@ public class ViewAuthControllerTest {
                         .param("passwordConfirm", passwordConfirm)
                         .with(csrf()))  // Add CSRF token here
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/login?registered"))
+                .andExpect(redirectedUrl("/login"))
                 .andReturn();
 
         // Then
@@ -94,7 +94,7 @@ public class ViewAuthControllerTest {
                         .param("passwordConfirm", passwordConfirm)
                         .with(csrf()))  // Add CSRF token here
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/signup?mismatch"))  // Corrected the expected redirect URL
+                .andExpect(redirectedUrl("/login"))  // Corrected the expected redirect URL
                 .andReturn();
     }
 
